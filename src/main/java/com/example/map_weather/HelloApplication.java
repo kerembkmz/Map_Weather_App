@@ -2,19 +2,15 @@ package com.example.map_weather;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -22,6 +18,10 @@ import java.net.URLEncoder;
 //Added the fasterxml.jackson.databind to be able to extract the needed information from the response
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+//To show the location on a map
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 
 
 
@@ -72,9 +72,17 @@ public class HelloApplication extends Application {
             String apiUrl = "http://api.openweathermap.org/data/2.5/weather?q=" + encodedLocation + "&appid=" + "da2bccf21d94fc2ad1dbbfb9ab756a1b";
             //Got the line above from OpenWeather's site, tested it with Postman.
 
+
+
             URL url = new URL(apiUrl);
+
+
+
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+
             connection.setRequestMethod("GET");
+
             //Should be GET since it was GET in postman.
 
             //System.out.println(connection.getResponseCode());
@@ -87,6 +95,27 @@ public class HelloApplication extends Application {
             JsonNode coordNode = jsonResponse.get("coord");
             double lon = coordNode.get("lon").asDouble();
             double lat = coordNode.get("lat").asDouble();
+
+            String apiUrl2 = "http://api.positionstack.com/v1/reverse?access_key=8888a893231524c681aa0e58ae80b7b3&query="+ lat + "," + lon;
+            URL url2 = new URL(apiUrl2);
+            HttpURLConnection connection2 = (HttpURLConnection) url2.openConnection();
+            connection2.setRequestMethod("GET");
+
+            JsonNode positionURL = objectMapper.readTree(connection2.getInputStream());
+
+            //String mapUrl = positionURL.get("data").get("results").get(0).get("map_url").toString();
+
+
+
+            //System.out.println(connection2.getResponseCode());
+                //Checked to see if there were any connection issues, but got 200.
+
+
+
+
+
+
+
 
             //System.out.println("lon: " + lon + ", lat: " + lat);
                 //Printed longitude and latitude to make sure they are working.
@@ -134,6 +163,23 @@ public class HelloApplication extends Application {
 
             TextArea WindSpeedTextArea = createTextArea("Wind Speed is: " + Double.toString(speed),150, 100);
             vbox.getChildren().add(WindSpeedTextArea);
+
+
+            String label = positionURL.get("data").get(0).get("label").asText();
+            Hyperlink googleMapsLink = new Hyperlink("Open in Google Maps");
+            googleMapsLink.setCursor(Cursor.HAND);
+            googleMapsLink.setOnAction(event -> {
+                try {
+                    String googleMapsUrl = "https://www.google.com/maps/search/?api=1&query=" + URLEncoder.encode(label, "UTF-8");
+                    java.awt.Desktop.getDesktop().browse(java.net.URI.create(googleMapsUrl));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            vbox.getChildren().add(googleMapsLink);;
+
+
+
 
             // Create and configure the alert pop-up
             Alert alert = new Alert(Alert.AlertType.INFORMATION);

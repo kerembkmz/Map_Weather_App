@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import com.example.map_weather.API_Keys;
+
 
 //Added the fasterxml.jackson.databind to be able to extract the needed information from the response
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,6 +38,8 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage stage) {
+
+
 
         // Create the TextField for user input
         TextField locationInput = new TextField();
@@ -64,12 +68,14 @@ public class HelloApplication extends Application {
 
     // Retrieve weather data from OpenWeatherMap API
     private void retrieveWeatherData(String location) {
+        String weatherAPIKey = API_Keys.getWeatherAPIKey();
+        String positionStackAPIKey = API_Keys.getPositionStackAPIKey();
         try {
             // Encode the location to be URL-safe
             String encodedLocation = URLEncoder.encode(location, "UTF-8");
 
             // Make an API request to OpenWeatherMap
-            String apiUrl = "http://api.openweathermap.org/data/2.5/weather?q=" + encodedLocation + "&appid=" + "da2bccf21d94fc2ad1dbbfb9ab756a1b";
+            String apiUrl = "http://api.openweathermap.org/data/2.5/weather?q=" + encodedLocation + "&appid=" + weatherAPIKey;
             //Got the line above from OpenWeather's site, tested it with Postman.
 
 
@@ -81,6 +87,7 @@ public class HelloApplication extends Application {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
 
+
             connection.setRequestMethod("GET");
 
             //Should be GET since it was GET in postman.
@@ -89,6 +96,13 @@ public class HelloApplication extends Application {
                 //Returns HTTP Status Code
                     //Returns 200 for Antalya, gives file not found error for a.
 
+            if (connection.getResponseCode() == 200) {
+                //Do nothing
+            } else {
+                showErrorMessage(connection.getResponseCode());
+            }
+
+
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonResponse = objectMapper.readTree(connection.getInputStream());
 
@@ -96,7 +110,7 @@ public class HelloApplication extends Application {
             double lon = coordNode.get("lon").asDouble();
             double lat = coordNode.get("lat").asDouble();
 
-            String apiUrl2 = "http://api.positionstack.com/v1/reverse?access_key=8888a893231524c681aa0e58ae80b7b3&query="+ lat + "," + lon;
+            String apiUrl2 = "http://api.positionstack.com/v1/reverse?access_key=" + positionStackAPIKey + "&query="+ lat + "," + lon;
             URL url2 = new URL(apiUrl2);
             HttpURLConnection connection2 = (HttpURLConnection) url2.openConnection();
             connection2.setRequestMethod("GET");
@@ -207,6 +221,24 @@ public class HelloApplication extends Application {
         textArea.setPrefWidth(prefWidth);
         textArea.setPrefHeight(prefHeight);
         return textArea;
+    }
+
+    private void showErrorMessage(int statusCode) {
+        String errorMessage = null;
+        if (String.valueOf(statusCode).startsWith("3")){
+            errorMessage = "Redirection";
+        }
+        if (String.valueOf(statusCode).startsWith("4")) {
+            errorMessage = "Client-side error";
+        } else if (String.valueOf(statusCode).startsWith("5")) {
+            errorMessage = "Server-side error";
+        }
+
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("HTTP ERROR");
+        alert.setHeaderText("HTTP Error Occured");
+        alert.setContentText(errorMessage);
+        alert.showAndWait();
     }
 
 

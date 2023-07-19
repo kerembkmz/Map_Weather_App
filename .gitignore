@@ -1,0 +1,4 @@
+target/
+
+##Password Files to be ignored##
+.src/main/java/com/example/map_weather/API_Keys.java
